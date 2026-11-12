@@ -1,0 +1,73 @@
+# RobotAI4B eğitim yapılandırması
+# Temel model: Gemma 4 E4B (Apache 2.0, ~4B "etkin" parametre, güçlü çok dilli / Türkçe destek)
+
+base_model: google/gemma-4-E4B-it
+
+# Eğitimde ve Pi üzerinde çalışırken AYNI sistem mesajı kullanılmalı.
+system_prompt: >-
+  Senin adın RobotAI4B. Raspberry Pi 5 üzerinde çalışan, Türkçe konuşan yardımsever
+  bir robot asistansın. Kısa, net ve doğal Türkçe cevaplar verirsin. Emin olmadığın
+  konularda bunu açıkça söylersin ve bilgi uydurmazsın.
+
+data:
+  output_dir: data/processed
+  val_ratio: 0.02
+  seed: 42
+  min_answer_chars: 20
+  max_answer_chars: 2500
+  sources:
+    # Kendi robot kişiliği / görev verin. Az sayıda örnek olduğu için tekrar edilir.
+    - name: robot_persona
+      type: jsonl            # {"messages": [{"role": "user"|"assistant", "content": ...}, ...]}
+      path: data/robotai_persona.jsonl
+      repeat: 4
+      enabled: true
+
+    # Doğal Türkçe soru-cevap (sınav soruları). Not: veri kartında lisans belirtilmemiş.
+    - name: turkish_exam
+      type: hf
+      hf_id: bezir/turkish_exam_instructions
+      format: soru_cevap
+      max_samples: 3000
+      enabled: true
+
+    # Alpaca'dan Türkçeye çevrilmiş genel talimat verisi (Apache 2.0).
+    # Kalitesi karışık olduğu için filtrelenip az sayıda örnek alınır.
+    - name: turkish_alpaca_chat
+      type: hf
+      hf_id: afkfatih/turkish-gemma-51k
+      format: conversations
+      max_samples: 3000
+      enabled: true
+
+    # Aynı Alpaca kaynağının başka bir çevirisi; yukarıdakiyle büyük ölçüde örtüşür.
+    - name: turkish_instructions
+      type: hf
+      hf_id: merve/turkish_instructions
+      format: talimat
+      max_samples: 2000
+      enabled: false
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  # Yalnızca dil modelinin katmanları eğitilir (görüntü/ses kuleleri dondurulur).
+  target_modules: '.*language_model.*\.(q_proj|k_proj|v_proj|o_proj|gate_proj|up_proj|down_proj)$'
+
+train:
+  output_dir: outputs/robotai4b-lora
+  max_seq_len: 1024
+  epochs: 1
+  learning_rate: 1.0e-4
+  lr_scheduler: cosine
+  warmup_ratio: 0.03
+  per_device_batch_size: 2
+  gradient_accumulation_steps: 8
+  weight_decay: 0.0
+  logging_steps: 10
+  eval_steps: 100
+  save_steps: 200
+  gradient_checkpointing: true
+  # 16 GB'lık GPU'lar (ör. Colab T4) için true yapın -> QLoRA (4-bit)
+  load_in_4bit: false

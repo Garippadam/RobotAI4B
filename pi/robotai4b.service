@@ -1,0 +1,20 @@
+# Pi açıldığında RobotAI4B sunucusunu otomatik başlatmak için systemd servisi.
+# Kurulum (kullanıcı adınız "pi" değilse User= ve yolları düzenleyin):
+#   sudo cp pi/robotai4b.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now robotai4b
+#   journalctl -u robotai4b -f        # günlükleri izle
+[Unit]
+Description=RobotAI4B Turkce dil modeli sunucusu (llama.cpp)
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/RobotAI4B
+ExecStart=/bin/bash /home/pi/RobotAI4B/pi/run_server.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

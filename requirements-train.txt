@@ -1,0 +1,13 @@
+# Eğitim ortamı (GPU'lu makine / Colab). Raspberry Pi'de GEREKMEZ.
+# Test edilen sürümler: torch 2.11, transformers 5.22, peft 0.21, datasets 5.2
+torch>=2.6
+transformers>=5.5
+peft>=0.17
+accelerate>=1.10
+datasets>=3.0
+pyyaml
+sentencepiece
+protobuf
+safetensors
+# --load-in-4bit (QLoRA) için:
+bitsandbytes; platform_system == "Linux"
